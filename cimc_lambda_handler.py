@@ -1,13 +1,14 @@
 from __future__ import print_function
 import paramiko
 import unicodedata
+import connection as Connection
 
-ssh_host = '10.10.10.10'
-ssh_user = 'ssh_user'
-ssh_pass = 'ssh_pass'
+ssh_host = Connection.ssh_host
+ssh_user = Connection.ssh_user
+ssh_pass = Connection.ssh_pass
 
-server_1 = '10.10.10.20'
-server_2 = '10.10.10.30'
+server_1 = '10.0.210.75'
+server_2 = '10.0.210.76'
 
 cimc_admin_user = 'admin'
 cimc_admin_pass = 'password'
@@ -23,6 +24,8 @@ def make_simple_cimc_call(cimc_cmd):
     stdout = stdout.readlines()
     ssh.close()
     
+    state = "unknown"
+
     for line in stdout:
 
         line = str(line)
@@ -40,7 +43,7 @@ def get_cimc_serial_number(server_cimc):
     else:
         server_ip = server_2
 
-    return make_simple_cimc_call("powershell -Command \"& {./Get-ImcSerial.ps1 -Server " + server_ip + " -User " + cimc_admin_user + " -Pass " + cimc_admin_pass + "}\"")
+    return make_simple_cimc_call("powershell -Command \"& {./ucs-alexa/Get-ImcSerial.ps1 -Server " + server_ip + " -User " + cimc_admin_user + " -Pass " + cimc_admin_pass + "}\"")
 
 def set_cimc_led(led_state,server_cimc):
 
@@ -49,7 +52,7 @@ def set_cimc_led(led_state,server_cimc):
     else:
         server_ip = server_2
 
-    return make_simple_cimc_call("powershell -Command \"& {./Set-ImcLed.ps1 -Server " + server_ip + " -User " + cimc_admin_user + " -Pass " + cimc_admin_pass + " -LedState " + led_state + "}\"")
+    return make_simple_cimc_call("powershell -Command \"& {./ucs-alexa/Set-ImcLed.ps1 -Server " + server_ip + " -User " + cimc_admin_user + " -Pass " + cimc_admin_pass + " -LedState " + led_state + "}\"")
 
 def get_cimc_led(server_cimc):
 
@@ -58,7 +61,7 @@ def get_cimc_led(server_cimc):
     else:
         server_ip = server_2
 
-    return make_simple_cimc_call("powershell -Command \"& {./Get-ImcLed.ps1 -Server " + server_ip + " -User " + cimc_admin_user + " -Pass " + cimc_admin_pass + "}\"")
+    return make_simple_cimc_call("powershell -Command \"& {./ucs-alexa/Get-ImcLed.ps1 -Server " + server_ip + " -User " + cimc_admin_user + " -Pass " + cimc_admin_pass + "}\"")
 
 
 # --------------- Helpers that build all of the responses ----------------------
@@ -98,12 +101,16 @@ def get_welcome_response():
 
     session_attributes = {}
     card_title = "Welcome"
-    speech_output = "Welcome to the Alexa Skill for UCS Managment. " \
-                    "You can say things like, Set the LED on or Set the LED off. " \
-                    "You can also get the state if the LED by asking, what is the LED state"
+    speech_output = "Welcome to the Alexa Skill for UCS IMC Managment. " \
+                    "You can say things like, Set Server Once LED state on, "\
+                    "or Set Server One LED state off. You can also get the " \
+                    "state of the LED by asking, what is the LED state on " \
+                    "Server One. To retrieve a server's serial number ask, " \
+                    "what is the serial number on Server One?"
+
     # If the user either does not reply to the welcome message or says something
     # that is not understood, they will be prompted again with this text.
-    reprompt_text = "Please ask me what is the LED state? "
+    reprompt_text = "Please ask me something about the UCS Server. "
     should_end_session = False
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, reprompt_text, should_end_session))

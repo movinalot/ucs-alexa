@@ -1,16 +1,17 @@
 from __future__ import print_function
 import paramiko
 import unicodedata
+import connection as Connection
 
-ssh_host = '10.10.10.10'
-ssh_user = 'ssh_user'
-ssh_pass = 'ssh_pass'
+ssh_host = Connection.ssh_host
+ssh_user = Connection.ssh_user
+ssh_pass = Connection.ssh_pass
 
-ucsm_domain_1 = '10.10.10.20'
-ucsm_domain_2 = '10.10.10.30'
+ucsm_domain_1 = '10.0.100.135'
+ucsm_domain_2 = '10.0.100.135'
 
 ucsm_admin_user = 'admin'
-ucsm_admin_pass = 'password'
+ucsm_admin_pass = 'nuova123'
 
 def make_simple_ucsapi_call(ucs_api_cmd):
 
@@ -35,6 +36,15 @@ def make_simple_ucsapi_call(ucs_api_cmd):
             
     return ucs_api_response.rstrip()
 
+def provision_ucsm_server(ucsm_domain):
+
+    if ucsm_domain == '1':
+        ucsm_domain_ip = ucsm_domain_1
+    else:
+        ucsm_domain_ip = ucsm_domain_2
+
+    return make_simple_ucsapi_call("powershell -Command \"& {./ucs-alexa/Provision-UcsServer.ps1 -ucsHost " + ucsm_domain_ip + " -ucsUser " + ucsm_admin_user + " -ucsPass " + ucsm_admin_pass + "}\"")
+
 def get_ucsm_faults(ucsm_domain):
 
     if ucsm_domain == '1':
@@ -42,7 +52,7 @@ def get_ucsm_faults(ucsm_domain):
     else:
         ucsm_domain_ip = ucsm_domain_2
 
-    return make_simple_ucsapi_call("powershell -Command \"& {./Get-UcsFaultCount.ps1 -ucsHost " + ucsm_domain_ip + " -ucsUser " + ucsm_admin_user + " -ucsPass " + ucsm_admin_pass + "}\"")
+    return make_simple_ucsapi_call("powershell -Command \"& {./ucs-alexa/Get-UcsFaultCount.ps1 -ucsHost " + ucsm_domain_ip + " -ucsUser " + ucsm_admin_user + " -ucsPass " + ucsm_admin_pass + "}\"")
 
 def get_ucsm_server_faults(ucsm_domain,ucsm_chassis,ucsm_blade):
 
@@ -51,7 +61,16 @@ def get_ucsm_server_faults(ucsm_domain,ucsm_chassis,ucsm_blade):
     else:
         ucsm_domain_ip = ucsm_domain_2
 
-    return make_simple_ucsapi_call("powershell -Command \"& {./Get-UcsBladeFaultCount.ps1 -ucsHost " + ucsm_domain_ip + " -ucsUser " + ucsm_admin_user + " -ucsPass " + ucsm_admin_pass + " -ucsChassis " + ucsm_chassis + " -ucsBlade " + ucsm_blade + "}\"")
+    return make_simple_ucsapi_call("powershell -Command \"& {./ucs-alexa/Get-UcsBladeFaultCount.ps1 -ucsHost " + ucsm_domain_ip + " -ucsUser " + ucsm_admin_user + " -ucsPass " + ucsm_admin_pass + " -ucsChassis " + ucsm_chassis + " -ucsBlade " + ucsm_blade + "}\"")
+
+def add_ucsm_org(ucsm_domain,ucsm_new_org,ucsm_parent_org):
+
+    if ucsm_domain == '1':
+        ucsm_domain_ip = ucsm_domain_1
+    else:
+        ucsm_domain_ip = ucsm_domain_2
+
+    return make_simple_ucsapi_call("powershell -Command \"& {./ucs-alexa/Add-UcsOrg.ps1 -ucsHost " + ucsm_domain_ip + " -ucsUser " + ucsm_admin_user + " -ucsPass " + ucsm_admin_pass + " -ucsNewOrg " + ucsm_new_org + " -ucsParentOrg " + ucsm_parent_org + "}\"")
 
 # --------------- Helpers that build all of the responses ----------------------
 
@@ -90,26 +109,103 @@ def get_welcome_response():
 
     session_attributes = {}
     card_title = "Welcome"
-    speech_output = "Welcome to the Alexa Skill for UCS Managment. " \
-                    "You can say things like, what are the faults counts on domain one? " \
-                    "You can ask what are the faults counts on chassis two blade 3?"
+    speech_output = "Welcome to the Alexa App for UCS Managment,," \
+                    "You can ask things like, What is the fault count for domain one?" \
+                    "Or you can ask What is the fault count for server three in chassis two in domain one?" \
+                    "Or Provision a Windows twenty twelve server."
     # If the user either does not reply to the welcome message or says something
     # that is not understood, they will be prompted again with this text.
-    reprompt_text = "Please ask me what is the LED state? "
+    reprompt_text = "Did you want to do something with, or know something about your UCS Systems?"
     should_end_session = False
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, reprompt_text, should_end_session))
 
+def thank_you():
+
+    session_attributes = {}
+    card_title = "Thank You"
+    speech_output = "You're Welcome!"
+
+    should_end_session = False
+    return build_response(session_attributes, build_speechlet_response(
+        card_title, speech_output, None, should_end_session))
+
+def you_are_the_best():
+
+    session_attributes = {}
+    card_title = "You are the best"
+    speech_output = "No, You Are!"
+
+    should_end_session = False
+    return build_response(session_attributes, build_speechlet_response(
+        card_title, speech_output, None, should_end_session))
+
+def no_really_you_are_the_best():
+
+    session_attributes = {}
+    card_title = "No Really You are the best"
+    speech_output = "I Know!"
+
+    should_end_session = True
+    return build_response(session_attributes, build_speechlet_response(
+        card_title, speech_output, None, should_end_session))
 
 def handle_session_end_request():
     card_title = "Session Ended"
-    speech_output = "Thank you for trying the Alexa Skill for UCS Management. " \
+    speech_output = "Thank you for using the Alexa App for UCS Management. " \
                     "Have a nice day! "
     # Setting this to true ends the session and exits the skill.
     should_end_session = True
     return build_response({}, build_speechlet_response(
         card_title, speech_output, None, should_end_session))
 
+
+def add_org(intent, session):
+    session_attributes = {}
+    reprompt_text = None
+
+    ucsm_domain = intent['slots']['domain']['value']
+    ucsm_new_org = intent['slots']['neworg']['value']
+    ucsm_parent_org = intent['slots']['parentorg']['value']
+
+    add_org_status = add_ucsm_org(ucsm_domain,ucsm_new_org,ucsm_parent_org)
+
+    if add_org_status == "Success":
+        speech_output = "The Organization,  " \
+            + ucsm_new_org + ", has been added under parent Organization " \
+            + ucsm_parent_org + "."
+    elif add_org_status == "Failure":
+        speech_output = "I was unable to add the Organization,  " \
+            + ucsm_new_org + ", it is possible that the specified parent Organization, " \
+            + ucsm_parent_org + ", does not exist."
+    elif add_org_status == "Exists":
+        speech_output = "The requested Organization,  " \
+            + ucsm_new_org + ", already exists under the specified parent Organization, " \
+            + ucsm_parent_org + "."
+
+
+    should_end_session = True
+
+    return build_response(session_attributes, build_speechlet_response(
+        intent['name'], speech_output, reprompt_text, should_end_session))
+
+def provision_server(intent, session):
+    session_attributes = {}
+    reprompt_text = None
+
+    ucsm_domain = intent['slots']['domain']['value']
+    fault_counts = provision_ucsm_server(ucsm_domain)
+
+    faults = fault_counts.split(',')
+
+    speech_output = "The server provisioning has started for the specified UCS domain, " \
+                    "I will send the server IP address, credentials, and DNS name to the UCS " \
+                    "Administrators Spark Room when the server provisioning is complete."
+
+    should_end_session = False
+
+    return build_response(session_attributes, build_speechlet_response(
+        intent['name'], speech_output, reprompt_text, should_end_session))
 
 def get_faults(intent, session):
     session_attributes = {}
@@ -186,6 +282,16 @@ def on_intent(intent_request, session):
         return get_faults(intent, session)
     elif intent_name == "GetServerFaults":
         return get_blade_faults(intent, session)
+    elif intent_name == "AddUcsOrg":
+        return add_org(intent, session)
+    elif intent_name == "ProvisionServer":
+        return provision_server(intent, session)
+    elif intent_name == "ThankYou":
+        return thank_you()
+    elif intent_name == "YouAreTheBest":
+        return you_are_the_best()
+    elif intent_name == "NoReallyYouAreTheBest":
+        return no_really_you_are_the_best()
     elif intent_name == "AMAZON.HelpIntent":
         return get_welcome_response()
     elif intent_name == "AMAZON.CancelIntent" or intent_name == "AMAZON.StopIntent":
