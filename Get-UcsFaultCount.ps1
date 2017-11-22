@@ -32,4 +32,4 @@ $warningFaults = $($ucsFaults | ?{$_.Severity -match "warning"}).Count
 
 "$criticalFaults,$majorFaults,$minorFaults,$warningFaults"
 
-Disconnect-Ucs
+$ucs_connection = Disconnect-Ucs

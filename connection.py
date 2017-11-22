@@ -1,3 +1,3 @@
-ssh_host = 'cloud-city-gw.eastus.cloudapp.azure.com'
-ssh_user = 'cisco'
-ssh_pass = 'Cisco12345Cisco'
+ssh_host = 'ssh_host'
+ssh_user = 'ssh_user'
+ssh_pass = 'ssh_pass'

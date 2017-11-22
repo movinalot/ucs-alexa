@@ -25,4 +25,4 @@ $imc_connection = Connect-Imc -Name $Server -Credential $credentials
 
 $(Get-ImcLocatorLed).OperState
 
-Disconnect-Imc
+$imc_connection = Disconnect-Imc

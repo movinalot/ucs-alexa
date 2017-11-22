@@ -30,4 +30,4 @@ for($x = 0; $x -lt $serialno.length; $x++) {
 }
 $newserialno
 
-Disconnect-Imc
+$imc_connection = Disconnect-Imc
