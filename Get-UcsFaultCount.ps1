@@ -14,7 +14,10 @@ param( [Parameter(Mandatory=$true,HelpMessage="Enter UCS Manager IP")]
     [string] $ucsUser,
 
   [Parameter(Mandatory=$true,HelpMessage="Enter UCS Manager user's Password")]
-    [string] $ucsPass
+    [string] $ucsPass,
+
+  [switch] $fromSpark
+
 );
 
 Import-Module -Name Cisco.UCSManager
@@ -30,6 +33,14 @@ $majorFaults = $($ucsFaults | ?{$_.Severity -match "major"}).Count
 $minorFaults = $($ucsFaults | ?{$_.Severity -match "minor"}).Count
 $warningFaults = $($ucsFaults | ?{$_.Severity -match "warning"}).Count
 
-"$criticalFaults,$majorFaults,$minorFaults,$warningFaults"
+if ($fromSpark) {
+  "Critical Faults * $criticalFaults"
+  "Major Faults * $majorFaults"
+  "Minor Faults * $minorFaults"
+  "Warnings * $warningFaults"
+
+} else {
+  "$criticalFaults,$majorFaults,$minorFaults,$warningFaults"
+}
 
 $ucs_connection = Disconnect-Ucs
