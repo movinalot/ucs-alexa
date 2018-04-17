@@ -54,14 +54,22 @@ def get_ucsm_faults(ucsm_domain):
 
     return make_simple_ucsapi_call("powershell -Command \"& {./ucs-alexa/Get-UcsFaultCount.ps1 -ucsHost " + ucsm_domain_ip + " -ucsUser " + ucsm_admin_user + " -ucsPass " + ucsm_admin_pass + "}\"")
 
-def get_ucsm_server_faults(ucsm_domain,ucsm_chassis,ucsm_blade):
+def get_ucsm_inv(ucsm_domain):
 
     if ucsm_domain == '1':
         ucsm_domain_ip = ucsm_domain_1
     else:
         ucsm_domain_ip = ucsm_domain_2
 
-    return make_simple_ucsapi_call("powershell -Command \"& {./ucs-alexa/Get-UcsBladeFaultCount.ps1 -ucsHost " + ucsm_domain_ip + " -ucsUser " + ucsm_admin_user + " -ucsPass " + ucsm_admin_pass + " -ucsChassis " + ucsm_chassis + " -ucsBlade " + ucsm_blade + "}\"")
+    return make_simple_ucsapi_call("powershell -Command \"& {./ucs-alexa/Get-UCSBladeInv.ps1 -ucsHost " + ucsm_domain_ip + " -ucsUser " + ucsm_admin_user + " -ucsPass " + ucsm_admin_pass + "}\"")
+
+def get_ucsm_server_faults(ucsm_chassis,ucsm_blade):
+
+    #ucsm_domain_ip = ucsm_domain_1
+
+    #return make_simple_ucsapi_call("powershell -Command \"& {./ucs-alexa/Get-UcsServerFaultCount.ps1 -ucsHost " + ucsm_domain_ip + " -ucsUser " + ucsm_admin_user + " -ucsPass " + ucsm_admin_pass + " -ucsChassis " + ucsm_chassis + " -ucsBlade " + ucsm_blade + "}\"")
+
+   return "5"
 
 def add_ucsm_org(ucsm_domain,ucsm_new_org,ucsm_parent_org):
 
@@ -111,8 +119,8 @@ def get_welcome_response():
     card_title = "Welcome"
     speech_output = "Welcome to the Alexa App for UCS Managment,," \
                     "You can ask things like, What is the fault count for domain one?" \
-                    "Or you can ask What is the fault count for server three in chassis two in domain one?" \
-                    "Or Provision a Windows twenty twelve server."
+                    "Or you can ask What is the fault count for server three in chassis two?" \
+                    "Or Provision a Web server."
     # If the user either does not reply to the welcome message or says something
     # that is not understood, they will be prompted again with this text.
     reprompt_text = "Did you want to do something with, or know something about your UCS Systems?"
@@ -207,6 +215,19 @@ def provision_server(intent, session):
     return build_response(session_attributes, build_speechlet_response(
         intent['name'], speech_output, reprompt_text, should_end_session))
 
+def get_ucsm_inventory(intent, session):
+    session_attributes = {}
+    reprompt_text = None
+
+    ucsm_domain = intent['slots']['domain']['value']
+    inv_counts = get_ucsm_inv(ucsm_domain)
+
+    speech_output = "For the queried UCS domain. " + inv_counts
+    should_end_session = True
+
+    return build_response(session_attributes, build_speechlet_response(
+        intent['name'], speech_output, reprompt_text, should_end_session))
+
 def get_faults(intent, session):
     session_attributes = {}
     reprompt_text = None
@@ -231,18 +252,15 @@ def get_blade_faults(intent, session):
     session_attributes = {}
     reprompt_text = None
 
-    ucsm_domain = intent['slots']['domain']['value']
+    #ucsm_domain = intent['slots']['domain']['value']
     ucsm_chassis = intent['slots']['chassis']['value']
     ucsm_blade = intent['slots']['serverid']['value']
-    fault_counts = get_ucsm_server_faults(ucsm_domain,ucsm_chassis,ucsm_blade)
+    #fault_counts = get_ucsm_server_faults(ucsm_domain,ucsm_chassis,ucsm_blade)
+    fault_counts = get_ucsm_server_faults(ucsm_chassis,ucsm_blade)
 
-    faults = fault_counts.split(',')
+    #faults = fault_counts.split(',')
 
-    speech_output = "For the queried UCS blade, there are, " \
-                    + faults[0] + ", critical faults, " \
-                    + faults[1] + ", major faults, " \
-                    + faults[2] + ", minor faults, and," \
-                    + faults[3] + ", warnings."
+    speech_output = "For the queried UCS blade, there are, " + fault_counts + " faults."
     should_end_session = True
 
     return build_response(session_attributes, build_speechlet_response(
@@ -282,6 +300,8 @@ def on_intent(intent_request, session):
         return get_faults(intent, session)
     elif intent_name == "GetServerFaults":
         return get_blade_faults(intent, session)
+    elif intent_name == "GetBladeInventory":
+        return get_ucsm_inventory(intent, session)
     elif intent_name == "AddUcsOrg":
         return add_org(intent, session)
     elif intent_name == "ProvisionServer":
